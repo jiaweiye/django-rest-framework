@@ -1,4 +1,7 @@
-source: viewsets.py
+---
+source:
+    - viewsets.py
+---
 
 # ViewSets
 
@@ -51,7 +54,7 @@ Typically we wouldn't do this, but would instead register the viewset with a rou
     from rest_framework.routers import DefaultRouter
 
     router = DefaultRouter()
-    router.register(r'users', UserViewSet, base_name='user')
+    router.register(r'users', UserViewSet, basename='user')
     urlpatterns = router.urls
 
 Rather than writing your own viewsets, you'll often want to use the existing base classes that provide a default set of behavior.  For example:
@@ -110,6 +113,8 @@ During dispatch, the following attributes are available on the `ViewSet`.
 * `action` - the name of the current action (e.g., `list`, `create`).
 * `detail` - boolean indicating if the current action is configured for a list or detail view.
 * `suffix` - the display suffix for the viewset type - mirrors the `detail` attribute.
+* `name` - the display name for the viewset. This argument is mutually exclusive to `suffix`.
+* `description` - the display description for the individual view of a viewset.
 
 You may inspect these attributes to adjust behaviour based on the current action. For example, you could restrict permissions to everything except the `list` action similar to this:
 
@@ -125,7 +130,7 @@ You may inspect these attributes to adjust behaviour based on the current action
 
 ## Marking extra actions for routing
 
-If you have ad-hoc methods that should be routable, you can mark them as such with the `@action` decorator. Like regular actions, extra actions may be intended for either a list of objects, or a single instance. To indicate this, set the `detail` argument to `True` or `False`. The router will configure its URL patterns accordingly. e.g., the `DefaultRouter` will configure detail actions to contain `pk` in their URL patterns.
+If you have ad-hoc methods that should be routable, you can mark them as such with the `@action` decorator. Like regular actions, extra actions may be intended for either a single object, or an entire collection. To indicate this, set the `detail` argument to `True` or `False`. The router will configure its URL patterns accordingly. e.g., the `DefaultRouter` will configure detail actions to contain `pk` in their URL patterns.
 
 A more complete example of extra actions:
 
@@ -142,7 +147,7 @@ A more complete example of extra actions:
         queryset = User.objects.all()
         serializer_class = UserSerializer
 
-        @action(methods=['post'], detail=True)
+        @action(detail=True, methods=['post'])
         def set_password(self, request, pk=None):
             user = self.get_object()
             serializer = PasswordSerializer(data=request.data)
@@ -156,7 +161,7 @@ A more complete example of extra actions:
 
         @action(detail=False)
         def recent_users(self, request):
-            recent_users = User.objects.all().order('-last_login')
+            recent_users = User.objects.all().order_by('-last_login')
 
             page = self.paginate_queryset(recent_users)
             if page is not None:
@@ -168,19 +173,35 @@ A more complete example of extra actions:
 
 The decorator can additionally take extra arguments that will be set for the routed view only.  For example:
 
-        @action(methods=['post'], detail=True, permission_classes=[IsAdminOrIsSelf])
+        @action(detail=True, methods=['post'], permission_classes=[IsAdminOrIsSelf])
         def set_password(self, request, pk=None):
            ...
 
-These decorator will route `GET` requests by default, but may also accept other HTTP methods by setting the `methods` argument.  For example:
+The `action` decorator will route `GET` requests by default, but may also accept other HTTP methods by setting the `methods` argument.  For example:
 
-        @action(methods=['post', 'delete'], detail=True)
+        @action(detail=True, methods=['post', 'delete'])
         def unset_password(self, request, pk=None):
            ...
 
 The two new actions will then be available at the urls `^users/{pk}/set_password/$` and `^users/{pk}/unset_password/$`
 
 To view all extra actions, call the `.get_extra_actions()` method.
+
+### Routing additional HTTP methods for extra actions
+
+Extra actions can map additional HTTP methods to separate `ViewSet` methods. For example, the above password set/unset methods could be consolidated into a single route. Note that additional mappings do not accept arguments.
+
+```python
+    @action(detail=True, methods=['put'], name='Change Password')
+    def password(self, request, pk=None):
+        """Update the user's password."""
+        ...
+
+    @password.mapping.delete
+    def delete_password(self, request, pk=None):
+        """Delete the user's password."""
+        ...
+```
 
 ## Reversing action URLs
 
@@ -251,7 +272,7 @@ Note that you can use any of the standard attributes or method overrides provide
         def get_queryset(self):
             return self.request.user.accounts.all()
 
-Note however that upon removal of the `queryset` property from your `ViewSet`, any associated [router][routers] will be unable to derive the base_name of your Model automatically, and so you will have to specify the `base_name` kwarg as part of your [router registration][routers].
+Note however that upon removal of the `queryset` property from your `ViewSet`, any associated [router][routers] will be unable to derive the basename of your Model automatically, and so you will have to specify the `basename` kwarg as part of your [router registration][routers].
 
 Also note that although this class provides the complete set of create/list/retrieve/update/destroy actions by default, you can restrict the available operations by using the standard permission classes.
 
@@ -296,5 +317,5 @@ To create a base viewset class that provides `create`, `list` and `retrieve` ope
 
 By creating your own base `ViewSet` classes, you can provide common behavior that can be reused in multiple viewsets across your API.
 
-[cite]: http://guides.rubyonrails.org/routing.html
+[cite]: https://guides.rubyonrails.org/action_controller_overview.html
 [routers]: routers.md

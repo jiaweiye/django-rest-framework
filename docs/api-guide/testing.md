@@ -1,4 +1,7 @@
-source: test.py
+---
+source:
+    - test.py
+---
 
 # Testing
 
@@ -119,7 +122,7 @@ Extends [Django's existing `Client` class][client].
 
 ## Making requests
 
-The `APIClient` class supports the same request interface as Django's standard `Client` class.  This means the that standard `.get()`, `.post()`, `.put()`, `.patch()`, `.delete()`, `.head()` and `.options()` methods are all available.  For example:
+The `APIClient` class supports the same request interface as Django's standard `Client` class.  This means that the standard `.get()`, `.post()`, `.put()`, `.patch()`, `.delete()`, `.head()` and `.options()` methods are all available.  For example:
 
     from rest_framework.test import APIClient
 
@@ -209,7 +212,7 @@ directly.
 
 Note that the requests client requires you to pass fully qualified URLs.
 
-## `RequestsClient` and working with the database
+## RequestsClient and working with the database
 
 The `RequestsClient` class is useful if you want to write tests that solely interact with the service interface. This is a little stricter than using the standard Django test client, as it means that all interactions should be via the API.
 
@@ -218,7 +221,7 @@ If you're using `RequestsClient` you'll want to ensure that test setup, and resu
 ## Headers & Authentication
 
 Custom headers and authentication credentials can be provided in the same way
-as [when using a standard `requests.Session` instance](http://docs.python-requests.org/en/master/user/advanced/#session-objects).
+as [when using a standard `requests.Session` instance][session_objects].
 
     from requests.auth import HTTPBasicAuth
 
@@ -399,11 +402,11 @@ For example, to add support for using `format='html'` in test requests, you migh
 
     REST_FRAMEWORK = {
         ...
-        'TEST_REQUEST_RENDERER_CLASSES': (
+        'TEST_REQUEST_RENDERER_CLASSES': [
             'rest_framework.renderers.MultiPartRenderer',
             'rest_framework.renderers.JSONRenderer',
             'rest_framework.renderers.TemplateHTMLRenderer'
-        )
+        ]
     }
 
 [cite]: https://jacobian.org/writing/django-apps-with-buildout/#s-create-a-test-wrapper
@@ -411,3 +414,4 @@ For example, to add support for using `format='html'` in test requests, you migh
 [requestfactory]: https://docs.djangoproject.com/en/stable/topics/testing/advanced/#django.test.client.RequestFactory
 [configuration]: #configuration
 [refresh_from_db_docs]: https://docs.djangoproject.com/en/1.11/ref/models/instances/#django.db.models.Model.refresh_from_db
+[session_objects]: https://requests.readthedocs.io/en/master/user/advanced/#session-objects

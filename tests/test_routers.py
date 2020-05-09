@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 from collections import namedtuple
 
 import pytest
@@ -7,7 +5,7 @@ from django.conf.urls import include, url
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.test import TestCase, override_settings
-from django.urls import resolve
+from django.urls import resolve, reverse
 
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.compat import get_regex_pattern
@@ -86,13 +84,13 @@ kwarged_notes_router = SimpleRouter()
 kwarged_notes_router.register(r'notes', KWargedNoteViewSet)
 
 namespaced_router = DefaultRouter()
-namespaced_router.register(r'example', MockViewSet, base_name='example')
+namespaced_router.register(r'example', MockViewSet, basename='example')
 
 empty_prefix_router = SimpleRouter()
-empty_prefix_router.register(r'', EmptyPrefixViewSet, base_name='empty_prefix')
+empty_prefix_router.register(r'', EmptyPrefixViewSet, basename='empty_prefix')
 
 regex_url_path_router = SimpleRouter()
-regex_url_path_router.register(r'', RegexUrlPathViewSet, base_name='regex')
+regex_url_path_router.register(r'', RegexUrlPathViewSet, basename='regex')
 
 
 class BasicViewSet(viewsets.ViewSet):
@@ -103,44 +101,65 @@ class BasicViewSet(viewsets.ViewSet):
     def action1(self, request, *args, **kwargs):
         return Response({'method': 'action1'})
 
-    @action(methods=['post'], detail=True)
+    @action(methods=['post', 'delete'], detail=True)
     def action2(self, request, *args, **kwargs):
         return Response({'method': 'action2'})
 
-    @action(methods=['post', 'delete'], detail=True)
-    def action3(self, request, *args, **kwargs):
-        return Response({'method': 'action2'})
+    @action(methods=['post'], detail=True)
+    def action3(self, request, pk, *args, **kwargs):
+        return Response({'post': pk})
 
-    @action(detail=True)
-    def link1(self, request, *args, **kwargs):
-        return Response({'method': 'link1'})
-
-    @action(detail=True)
-    def link2(self, request, *args, **kwargs):
-        return Response({'method': 'link2'})
+    @action3.mapping.delete
+    def action3_delete(self, request, pk, *args, **kwargs):
+        return Response({'delete': pk})
 
 
-class TestSimpleRouter(TestCase):
+class TestSimpleRouter(URLPatternsTestCase, TestCase):
+    router = SimpleRouter()
+    router.register('basics', BasicViewSet, basename='basic')
+
+    urlpatterns = [
+        url(r'^api/', include(router.urls)),
+    ]
+
     def setUp(self):
         self.router = SimpleRouter()
 
-    def test_link_and_action_decorator(self):
-        routes = self.router.get_routes(BasicViewSet)
-        decorator_routes = routes[2:]
-        # Make sure all these endpoints exist and none have been clobbered
-        for i, endpoint in enumerate(['action1', 'action2', 'action3', 'link1', 'link2']):
-            route = decorator_routes[i]
-            # check url listing
-            assert route.url == '^{{prefix}}/{{lookup}}/{0}{{trailing_slash}}$'.format(endpoint)
-            # check method to function mapping
-            if endpoint == 'action3':
-                methods_map = ['post', 'delete']
-            elif endpoint.startswith('action'):
-                methods_map = ['post']
-            else:
-                methods_map = ['get']
-            for method in methods_map:
-                assert route.mapping[method] == endpoint
+    def test_action_routes(self):
+        # Get action routes (first two are list/detail)
+        routes = self.router.get_routes(BasicViewSet)[2:]
+
+        assert routes[0].url == '^{prefix}/{lookup}/action1{trailing_slash}$'
+        assert routes[0].mapping == {
+            'post': 'action1',
+        }
+
+        assert routes[1].url == '^{prefix}/{lookup}/action2{trailing_slash}$'
+        assert routes[1].mapping == {
+            'post': 'action2',
+            'delete': 'action2',
+        }
+
+        assert routes[2].url == '^{prefix}/{lookup}/action3{trailing_slash}$'
+        assert routes[2].mapping == {
+            'post': 'action3',
+            'delete': 'action3_delete',
+        }
+
+    def test_multiple_action_handlers(self):
+        # Standard action
+        response = self.client.post(reverse('basic-action3', args=[1]))
+        assert response.data == {'post': '1'}
+
+        # Additional handler registered with MethodMapper
+        response = self.client.delete(reverse('basic-action3', args=[1]))
+        assert response.data == {'delete': '1'}
+
+    def test_register_after_accessing_urls(self):
+        self.router.register(r'notes', NoteViewSet)
+        assert len(self.router.urls) == 2  # list and detail
+        self.router.register(r'notes_bis', NoteViewSet)
+        assert len(self.router.urls) == 4
 
 
 class TestRootView(URLPatternsTestCase, TestCase):
@@ -304,7 +323,7 @@ class TestActionKeywordArgs(TestCase):
                 })
 
         self.router = SimpleRouter()
-        self.router.register(r'test', TestViewSet, base_name='test')
+        self.router.register(r'test', TestViewSet, basename='test')
         self.view = self.router.urls[-1].callback
 
     def test_action_kwargs(self):
@@ -329,7 +348,7 @@ class TestActionAppliedToExistingRoute(TestCase):
                 })
 
         self.router = SimpleRouter()
-        self.router.register(r'test', TestViewSet, base_name='test')
+        self.router.register(r'test', TestViewSet, basename='test')
 
         with pytest.raises(ImproperlyConfigured):
             self.router.urls
@@ -416,13 +435,13 @@ class TestEmptyPrefix(URLPatternsTestCase, TestCase):
     def test_empty_prefix_list(self):
         response = self.client.get('/empty-prefix/')
         assert response.status_code == 200
-        assert json.loads(response.content.decode('utf-8')) == [{'uuid': '111', 'text': 'First'},
-                                                                {'uuid': '222', 'text': 'Second'}]
+        assert json.loads(response.content.decode()) == [{'uuid': '111', 'text': 'First'},
+                                                         {'uuid': '222', 'text': 'Second'}]
 
     def test_empty_prefix_detail(self):
         response = self.client.get('/empty-prefix/1/')
         assert response.status_code == 200
-        assert json.loads(response.content.decode('utf-8')) == {'uuid': '111', 'text': 'First'}
+        assert json.loads(response.content.decode()) == {'uuid': '111', 'text': 'First'}
 
 
 class TestRegexUrlPath(URLPatternsTestCase, TestCase):
@@ -434,14 +453,14 @@ class TestRegexUrlPath(URLPatternsTestCase, TestCase):
         kwarg = '1234'
         response = self.client.get('/regex/list/{}/'.format(kwarg))
         assert response.status_code == 200
-        assert json.loads(response.content.decode('utf-8')) == {'kwarg': kwarg}
+        assert json.loads(response.content.decode()) == {'kwarg': kwarg}
 
     def test_regex_url_path_detail(self):
         pk = '1'
         kwarg = '1234'
         response = self.client.get('/regex/{}/detail/{}/'.format(pk, kwarg))
         assert response.status_code == 200
-        assert json.loads(response.content.decode('utf-8')) == {'pk': pk, 'kwarg': kwarg}
+        assert json.loads(response.content.decode()) == {'pk': pk, 'kwarg': kwarg}
 
 
 class TestViewInitkwargs(URLPatternsTestCase, TestCase):

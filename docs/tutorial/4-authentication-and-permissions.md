@@ -63,7 +63,7 @@ Now that we've got some users to work with, we'd better add representations of t
 
         class Meta:
             model = User
-            fields = ('id', 'username', 'snippets')
+            fields = ['id', 'username', 'snippets']
 
 Because `'snippets'` is a *reverse* relationship on the User model, it will not be included by default when using the `ModelSerializer` class, so we needed to add an explicit field for it.
 
@@ -83,7 +83,7 @@ We'll also add a couple of views to `views.py`.  We'd like to just use read-only
 
 Make sure to also import the `UserSerializer` class
 
-	from snippets.serializers import UserSerializer
+    from snippets.serializers import UserSerializer
 
 Finally we need to add those views into the API, by referencing them from the URL conf. Add the following to the patterns in `snippets/urls.py`.
 
@@ -127,7 +127,7 @@ First add the following import in the views module
 
 Then, add the following property to **both** the `SnippetList` and `SnippetDetail` view classes.
 
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 ## Adding login to the Browsable API
 
@@ -178,8 +178,8 @@ In the snippets app, create a new file, `permissions.py`
 
 Now we can add that custom permission to our snippet instance endpoint, by editing the `permission_classes` property on the `SnippetDetail` view class:
 
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                          IsOwnerOrReadOnly,)
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly]
 
 Make sure to also import the `IsOwnerOrReadOnly` class.
 
@@ -197,7 +197,7 @@ If we're interacting with the API programmatically we need to explicitly provide
 
 If we try to create a snippet without authenticating, we'll get an error:
 
-    http POST http://127.0.0.1:8000/snippets/ code="print 123"
+    http POST http://127.0.0.1:8000/snippets/ code="print(123)"
 
     {
         "detail": "Authentication credentials were not provided."
@@ -205,13 +205,13 @@ If we try to create a snippet without authenticating, we'll get an error:
 
 We can make a successful request by including the username and password of one of the users we created earlier.
 
-    http -a admin:password123 POST http://127.0.0.1:8000/snippets/ code="print 789"
+    http -a admin:password123 POST http://127.0.0.1:8000/snippets/ code="print(789)"
 
     {
         "id": 1,
         "owner": "admin",
         "title": "foo",
-        "code": "print 789",
+        "code": "print(789)",
         "linenos": false,
         "language": "python",
         "style": "friendly"

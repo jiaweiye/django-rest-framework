@@ -1,19 +1,17 @@
-#! /usr/bin/env python
-from __future__ import print_function
-
+#! /usr/bin/env python3
 import subprocess
 import sys
 
 import pytest
 
 PYTEST_ARGS = {
-    'default': ['tests', '--tb=short', '-s', '-rw'],
-    'fast': ['tests', '--tb=short', '-q', '-s', '-rw'],
+    'default': [],
+    'fast': ['-q'],
 }
 
 FLAKE8_ARGS = ['rest_framework', 'tests']
 
-ISORT_ARGS = ['--recursive', '--check-only', '--diff', '-o' 'uritemplate', '-p', 'tests', 'rest_framework', 'tests']
+ISORT_ARGS = ['--recursive', '--check-only', '--diff', 'rest_framework', 'tests']
 
 
 def exit_on_failure(ret, message=None):

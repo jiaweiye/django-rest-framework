@@ -1,6 +1,6 @@
 # Caching
 
-> A certain woman had a very sharp conciousness but almost no
+> A certain woman had a very sharp consciousness but almost no
 > memory ... She remembered enough to work, and she worked hard.
 > - Lydia Davis
 
@@ -13,15 +13,20 @@ provided in Django.
 
 Django provides a [`method_decorator`][decorator] to use
 decorators with class based views. This can be used with
-with other cache decorators such as [`cache_page`][page] and
+other cache decorators such as [`cache_page`][page] and
 [`vary_on_cookie`][cookie].
 
 ```python
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import viewsets
 
-class UserViewSet(viewsets.Viewset):
+
+class UserViewSet(viewsets.ViewSet):
 
     # Cache requested url for each user for 2 hours
     @method_decorator(cache_page(60*60*2))
@@ -31,6 +36,7 @@ class UserViewSet(viewsets.Viewset):
             'user_feed': request.user.get_user_feed()
         }
         return Response(content)
+
 
 class PostView(APIView):
 

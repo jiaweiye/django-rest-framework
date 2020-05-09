@@ -37,8 +37,8 @@ Next we're going to replace the `SnippetList`, `SnippetDetail` and `SnippetHighl
         """
         queryset = Snippet.objects.all()
         serializer_class = SnippetSerializer
-        permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                              IsOwnerOrReadOnly,)
+        permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                              IsOwnerOrReadOnly]
 
         @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
         def highlight(self, request, *args, **kwargs):
@@ -105,7 +105,7 @@ Because we're using `ViewSet` classes rather than `View` classes, we actually do
 
 Here's our re-wired `snippets/urls.py` file.
 
-    from django.conf.urls import url, include
+    from django.urls import path, include
     from rest_framework.routers import DefaultRouter
     from snippets import views
 
@@ -116,7 +116,7 @@ Here's our re-wired `snippets/urls.py` file.
 
     # The API URLs are now determined automatically by the router.
     urlpatterns = [
-        url(r'^', include(router.urls))
+        path('', include(router.urls)),
     ]
 
 Registering the viewsets with the router is similar to providing a urlpattern.  We include two arguments - the URL prefix for the views, and the viewset itself.
@@ -128,8 +128,3 @@ The `DefaultRouter` class we're using also automatically creates the API root vi
 Using viewsets can be a really useful abstraction.  It helps ensure that URL conventions will be consistent across your API, minimizes the amount of code you need to write, and allows you to concentrate on the interactions and representations your API provides rather than the specifics of the URL conf.
 
 That doesn't mean it's always the right approach to take.  There's a similar set of trade-offs to consider as when using class-based views instead of function based views.  Using viewsets is less explicit than building your views individually.
-
-In [part 7][tut-7] of the tutorial we'll look at how we can add an API schema,
-and interact with our API using a client library or command line tool.
-
-[tut-7]: 7-schemas-and-client-libraries.md

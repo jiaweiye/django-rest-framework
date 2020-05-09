@@ -1,4 +1,7 @@
-source: routers.py
+---
+source:
+    - routers.py
+---
 
 # Routers
 
@@ -28,7 +31,7 @@ There are two mandatory arguments to the `register()` method:
 
 Optionally, you may also specify an additional argument:
 
-* `base_name` - The base to use for the URL names that are created.  If unset the basename will be automatically generated based on the `queryset` attribute of the viewset, if it has one.  Note that if the viewset does not include a `queryset` attribute then you must set `base_name` when registering the viewset.
+* `basename` - The base to use for the URL names that are created.  If unset the basename will be automatically generated based on the `queryset` attribute of the viewset, if it has one.  Note that if the viewset does not include a `queryset` attribute then you must set `basename` when registering the viewset.
 
 The example above would generate the following URL patterns:
 
@@ -39,13 +42,13 @@ The example above would generate the following URL patterns:
 
 ---
 
-**Note**: The `base_name` argument is used to specify the initial part of the view name pattern.  In the example above, that's the `user` or `account` part.
+**Note**: The `basename` argument is used to specify the initial part of the view name pattern.  In the example above, that's the `user` or `account` part.
 
-Typically you won't *need* to specify the `base_name` argument, but if you have a viewset where you've defined a custom `get_queryset` method, then the viewset may not have a `.queryset` attribute set.  If you try to register that viewset you'll see an error like this:
+Typically you won't *need* to specify the `basename` argument, but if you have a viewset where you've defined a custom `get_queryset` method, then the viewset may not have a `.queryset` attribute set.  If you try to register that viewset you'll see an error like this:
 
-    'base_name' argument not specified, and could not automatically determine the name from the viewset, as it does not have a '.queryset' attribute.
+    'basename' argument not specified, and could not automatically determine the name from the viewset, as it does not have a '.queryset' attribute.
 
-This means you'll need to explicitly set the `base_name` argument when registering the viewset, as it could not be automatically determined from the model name.
+This means you'll need to explicitly set the `basename` argument when registering the viewset, as it could not be automatically determined from the model name.
 
 ---
 
@@ -53,7 +56,7 @@ This means you'll need to explicitly set the `base_name` argument when registeri
 
 The `.urls` attribute on a router instance is simply a standard list of URL patterns. There are a number of different styles for how you can include these URLs.
 
-For example, you can append `router.urls` to a list of existing views…
+For example, you can append `router.urls` to a list of existing views...
 
     router = routers.SimpleRouter()
     router.register(r'users', UserViewSet)
@@ -65,7 +68,7 @@ For example, you can append `router.urls` to a list of existing views…
 
     urlpatterns += router.urls
 
-Alternatively you can use Django's `include` function, like so…
+Alternatively you can use Django's `include` function, like so...
 
     urlpatterns = [
         url(r'^forgot-password/$', ForgotPasswordFormView.as_view()),
@@ -293,7 +296,7 @@ The following mappings would be generated...
     <tr><th>URL</th><th>HTTP Method</th><th>Action</th><th>URL Name</th></tr>
     <tr><td>/users</td><td>GET</td><td>list</td><td>user-list</td></tr>
     <tr><td>/users/{username}</td><td>GET</td><td>retrieve</td><td>user-detail</td></tr>
-    <tr><td>/users/{username}/group-names</td><td>GET</td><td>group_names</td><td>user-group-names</td></tr>
+    <tr><td>/users/{username}/group_names</td><td>GET</td><td>group_names</td><td>user-group-names</td></tr>
 </table>
 
 For another example of setting the `.routes` attribute, see the source code for the `SimpleRouter` class.
@@ -302,7 +305,7 @@ For another example of setting the `.routes` attribute, see the source code for 
 
 If you want to provide totally custom behavior, you can override `BaseRouter` and override the `get_urls(self)` method.  The method should inspect the registered viewsets and return a list of URL patterns.  The registered prefix, viewset and basename tuples may be inspected by accessing the `self.registry` attribute.
 
-You may also want to override the `get_default_base_name(self, viewset)` method, or else always explicitly set the `base_name` argument when registering your viewsets with the router.
+You may also want to override the `get_default_basename(self, viewset)` method, or else always explicitly set the `basename` argument when registering your viewsets with the router.
 
 # Third Party Packages
 
@@ -325,7 +328,7 @@ The [wq.db package][wq.db] provides an advanced [ModelRouter][wq.db-router] clas
 
 The [`DRF-extensions` package][drf-extensions] provides [routers][drf-extensions-routers] for creating [nested viewsets][drf-extensions-nested-viewsets], [collection level controllers][drf-extensions-collection-level-controllers] with [customizable endpoint names][drf-extensions-customizable-endpoint-names].
 
-[cite]: http://guides.rubyonrails.org/routing.html
+[cite]: https://guides.rubyonrails.org/routing.html
 [route-decorators]: viewsets.md#marking-extra-actions-for-routing
 [drf-nested-routers]: https://github.com/alanjds/drf-nested-routers
 [wq.db]: https://wq.io/wq.db
